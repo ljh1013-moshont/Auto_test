@@ -3,7 +3,7 @@ from unittest import expectedFailure
 
 import pytest
 #单参数
-@pytest.mark.paramtrize("number",[1,2,3,4,5,6,7])
+@pytest.mark.parametrize("number",[1,2,3,4,5,6,7])
 def test_demo1(number):
     assert number<3
 #多参数

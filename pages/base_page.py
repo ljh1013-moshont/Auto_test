@@ -19,7 +19,7 @@ class BasePage:
         logger.info(f"填充输入框:{description},内容:{text}")
         locator.fill(text)
 
-    def get_text(self,locator:Locator)->str:
+    def get_text(self,locator:Locator)->str |None:
         return locator.text_content()
 
     def is_visible(self,locator:Locator,timeout:int =5000)->bool:
