@@ -12,57 +12,43 @@ on:
     branches: [main, develop]
 
   # 触发器 2：向 main 分支提交 Pull Request（或更新 PR）时触发
-  # 注意：这里只监控目标分支是 main 的 PR，PR 合并前就能跑测试，防止坏代码合入
   pull_request:
     branches: [main]
 
   # 触发器 3：定时触发（cron 表达式）
   # 格式：分 时 日 月 周（5 段），时区是 UTC
-  # '0 2 * * *' = 每天 UTC 02:00 执行 = 北京时间每天 10:00
-  # 用途：代码没人动也能每天跑一次，做「每日回归」，及早发现环境或依赖变化导致的问题
   schedule:
     - cron: '0 2 * * *'
 
 # ==============================================================================
-# 任务定义：一个 workflow 可以包含多个 job，这里只有一个叫 test 的 job
+# 任务定义
 # ==============================================================================
 jobs:
   test:
     # 运行环境：GitHub 免费提供的「最新版 Ubuntu」虚拟机
-    # 每次运行都是全新的干净环境，跑完即销毁，所以依赖必须每步重新安装
     runs-on: ubuntu-latest
 
+    # 【新增】给这个 job 赋予写权限，否则无法把报告推送到 gh-pages 分支
+    permissions:
+      contents: write
+
     # ==========================================================================
-    # 矩阵策略：把下面的变量做「笛卡尔积」，一个 job 自动展开成多个并行 job
-    # python-version 有 1 个值，browser 有 2 个值 → 1 × 2 = 2 个并行 job
-    #   job1: test (3.11, chromium)
-    #   job2: test (3.11, firefox)
-    # 每个 job 里用 ${{ matrix.xxx }} 取当前 job 对应的值
+    # 矩阵策略：1 × 2 = 2 个并行 job (chromium 和 firefox)
     # ==========================================================================
     strategy:
       matrix:
         python-version: ['3.11']
         browser: [chromium, firefox]
 
-    # ==========================================================================
-    # 步骤列表：从上到下顺序执行；默认某一步失败会中断后续步骤
-    # 每个步骤用 uses（调用现成 action）或 run（执行 shell 命令），二选一
-    # ==========================================================================
     steps:
       # ------------------------------------------------------------------------
       # 步骤 1：检出代码
-      # 作用：把仓库的代码拉到虚拟机上，后续步骤才能访问 tests/、pages/ 等文件
-      # 为什么必须第一步：虚拟机刚启动时是空的，不拉代码后面全都找不到文件
-      # uses 格式：owner/repo@版本，@v4 固定大版本，避免 action 更新导致行为变化
       # ------------------------------------------------------------------------
       - name: 检出代码
         uses: actions/checkout@v4
 
       # ------------------------------------------------------------------------
       # 步骤 2：安装指定版本的 Python
-      # uses：GitHub 官方 action，负责装 Python 并配好 PATH
-      # with：给 action 传参数，这里用矩阵里的 python-version（当前是 3.11）
-      # ${{ matrix.python-version }} 会被替换成 '3.11'
       # ------------------------------------------------------------------------
       - name: 安装 Python
         uses: actions/setup-python@v5
@@ -71,9 +57,6 @@ jobs:
 
       # ------------------------------------------------------------------------
       # 步骤 3：安装项目依赖
-      # run: 直接在虚拟机上执行 shell 命令；| 表示多行命令按顺序执行
-      # 先升级 pip，再按 requirements.txt 安装 pytest、playwright、allure-pytest 等
-      # 注意：requirements.txt 必须在仓库根目录，否则这里找不到文件会失败
       # ------------------------------------------------------------------------
       - name: 安装依赖
         run: |
@@ -82,20 +65,12 @@ jobs:
 
       # ------------------------------------------------------------------------
       # 步骤 4：安装 Playwright 浏览器
-      # 只 pip install playwright 是不够的，浏览器二进制要单独下载
-      # --with-deps：自动安装浏览器依赖的系统库（libnss3、libatk 等）
-      #               在 Linux CI 环境里必须加，否则浏览器启动会报缺库
-      # ${{ matrix.browser }}：当前 job 是 chromium 就装 chromium，是 firefox 就装 firefox
       # ------------------------------------------------------------------------
       - name: 安装 Playwright 浏览器
         run: playwright install --with-deps ${{ matrix.browser }}
 
       # ------------------------------------------------------------------------
       # 步骤 5：安装 Allure 命令行工具
-      # 为什么需要：allure-pytest 只负责生成原始数据（JSON/XML），
-      #             要生成可读的 HTML 报告，必须用 Allure 命令行工具
-      # ppa:qameta/allure：Ubuntu 的第三方软件源，apt 从这里下载 allure
-      # 注意：这个 PPA 是社区维护的，存在失效风险；更稳的做法是下载官方 zip 解压
       # ------------------------------------------------------------------------
       - name: 安装 Allure 命令行工具
         run: |
@@ -105,25 +80,14 @@ jobs:
 
       # ------------------------------------------------------------------------
       # 步骤 6：运行测试
-      # pytest tests/：跑 tests 目录下所有测试
-      # --browser：pytest-playwright 插件参数，指定用哪个浏览器
-      # continue-on-error: true 的含义：
-      #   测试失败时，这一步标红，但「不中断 job」，后续上传结果、生成报告的步骤仍会执行
-      #   目的：测试挂了也要把 Allure 报告生成出来，方便排查
-      #   副作用：job 整体会显示「成功」，测试失败不会让 GitHub 标红整个 job
+      # 【修改】显式指定了 --alluredir，防止数据未生成导致报告为空
       # ------------------------------------------------------------------------
       - name: 运行测试
-        run: pytest tests/ --browser ${{ matrix.browser }}
+        run: pytest tests/ --browser ${{ matrix.browser }} --alluredir=reports/allure_results
         continue-on-error: true
 
       # ------------------------------------------------------------------------
       # 步骤 7：上传测试原始数据为构建产物（Artifact）
-      # if: always() 的含义：无论前面步骤成功还是失败，这一步都执行
-      #   不加的话，测试失败会导致后续步骤被跳过，报告就没了
-      # uses：GitHub 官方 action，把文件打包上传，可在运行详情页底部下载
-      # name：产物名，带上浏览器名区分两个矩阵 job，避免互相覆盖
-      # path：要上传的目录，即 pytest --alluredir 生成的原始数据目录
-      #       注意：这个路径必须和 pytest.ini 里 --alluredir 的配置一致
       # ------------------------------------------------------------------------
       - name: 上传测试结果
         if: always()
@@ -134,32 +98,16 @@ jobs:
 
       # ------------------------------------------------------------------------
       # 步骤 8：根据原始数据生成 Allure HTML 报告
-      # if: always()：同上，测试失败也要生成报告
-      # uses：第三方 action，内部调用 allure generate 把原始数据转成 HTML
-      # 三个输入参数：
-      #   allure_results：原始数据目录（上一步上传的那个）
-      #   allure_history：历史数据目录，用于报告里显示「趋势图」（历次运行对比）
-      #   allure_report：生成的 HTML 报告输出目录
+      # 【修改】弃用 Docker Action，直接使用命令行工具生成（更稳定）
       # ------------------------------------------------------------------------
       - name: 生成 Allure 报告
         if: always()
-        uses: simple-elf/allure-report-action@v1.9
-        with:
-          allure_results: reports/allure_results
-          allure_history: allure-history
-          allure_report: allure-report
+        run: |
+          allure generate reports/allure_results -o allure-report --clean
 
       # ------------------------------------------------------------------------
       # 步骤 9：把报告部署到 GitHub Pages
-      # if: always()：同上
-      # uses：第三方 action，把指定目录推到 gh-pages 分支
-      # 部署成功后可通过 https://<用户名>.github.io/<仓库名>/ 访问报告
-      # with 参数：
-      #   github_token：自动提供的令牌，用于向仓库推送 gh-pages 分支
-      #                需要仓库 Settings → Actions → Workflow permissions 设为 Read and write
-      #   publish_branch：目标分支名，GitHub Pages 默认从 gh-pages 分支发布
-      #   publish_dir：要发布的目录，这里用 allure-history（包含报告和历史趋势）
-      # 注意：首次使用需在 Settings → Pages 里把 Source 设为 gh-pages 分支
+      # 【修改】publish_dir 修改为前面命令行生成的 allure-report 目录
       # ------------------------------------------------------------------------
       - name: 部署报告到 GitHub Pages
         if: always()
@@ -167,4 +115,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: allure-history
+          publish_dir: ./allure-report
