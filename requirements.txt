@@ -1,0 +1,16 @@
+#通过在文件中写入各插件版本，完成对插件的导入
+pytest==8.3.4
+pytest-html==4.1.1
+pytest-xdist==3.6.1
+pytest-rerunfailures==15.0
+pytest-asyncio==0.25.0
+requests==2.32.3
+playwright==1.49.1
+selenium==4.27.1
+PyYaml==6.0.3
+openpyxl==3.1.5
+allure-pytest==2.13.5
+loguru==0.7.3
+python-dotenv==1.0.1
+pydantic==2.10.4
+jsonschema==4.23.0
