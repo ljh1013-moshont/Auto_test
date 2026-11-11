@@ -28,7 +28,7 @@ jobs:
     # 运行环境：GitHub 免费提供的「最新版 Ubuntu」虚拟机
     runs-on: ubuntu-latest
 
-    # 【新增】给这个 job 赋予写权限，否则无法把报告推送到 gh-pages 分支
+    # 给这个 job 赋予写权限，否则无法把报告推送到 gh-pages 分支
     permissions:
       contents: write
 
@@ -71,16 +71,18 @@ jobs:
 
       # ------------------------------------------------------------------------
       # 步骤 5：安装 Allure 命令行工具
+      # 【修改】直接下载官方压缩包，替换失效的 apt 源
       # ------------------------------------------------------------------------
       - name: 安装 Allure 命令行工具
         run: |
-          sudo apt-add-repository ppa:qameta/allure -y
-          sudo apt-get update
-          sudo apt-get install allure -y
+          wget -q https://github.com/allure-framework/allure2/releases/download/2.29.0/allure-2.29.0.tgz
+          tar -zxf allure-2.29.0.tgz
+          sudo mv allure-2.29.0 /opt/allure
+          echo "/opt/allure/bin" >> $GITHUB_PATH
 
       # ------------------------------------------------------------------------
       # 步骤 6：运行测试
-      # 【修改】显式指定了 --alluredir，防止数据未生成导致报告为空
+      # 显式指定了 --alluredir，防止数据未生成导致报告为空
       # ------------------------------------------------------------------------
       - name: 运行测试
         run: pytest tests/ --browser ${{ matrix.browser }} --alluredir=reports/allure_results
@@ -98,7 +100,7 @@ jobs:
 
       # ------------------------------------------------------------------------
       # 步骤 8：根据原始数据生成 Allure HTML 报告
-      # 【修改】弃用 Docker Action，直接使用命令行工具生成（更稳定）
+      # 弃用 Docker Action，直接使用命令行工具生成（更稳定）
       # ------------------------------------------------------------------------
       - name: 生成 Allure 报告
         if: always()
@@ -107,7 +109,7 @@ jobs:
 
       # ------------------------------------------------------------------------
       # 步骤 9：把报告部署到 GitHub Pages
-      # 【修改】publish_dir 修改为前面命令行生成的 allure-report 目录
+      # publish_dir 修改为前面命令行生成的 allure-report 目录
       # ------------------------------------------------------------------------
       - name: 部署报告到 GitHub Pages
         if: always()
