@@ -86,7 +86,7 @@ jobs:
       # ------------------------------------------------------------------------
       - name: 运行测试
         run: pytest tests/ --browser ${{ matrix.browser }} --alluredir=reports/allure_results
-        continue-on-error: true
+        
 
       # ------------------------------------------------------------------------
       # 步骤 7：上传测试原始数据为构建产物（Artifact）
