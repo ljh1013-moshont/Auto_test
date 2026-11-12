@@ -1,2 +1,0 @@
-2026-11-11 09:12:57.935 | INFO     | pages.base_page:open:11 - 打开页面,https://example.com/login
-2026-11-11 09:12:59.044 | INFO     | pages.base_page:open:11 - 打开页面,https://example.com/login
