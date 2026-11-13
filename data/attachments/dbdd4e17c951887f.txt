@@ -1,6 +1,0 @@
-2026-11-12 09:08:18.257 | INFO     | pages.base_page:open:11 - 打开页面,https://example.com/login
-2026-11-12 09:08:18.319 | INFO     | pages.base_page:fill:19 - 填充输入框:用户名输入框,内容:nonexistent
-2026-11-12 09:08:49.525 | INFO     | pages.base_page:open:11 - 打开页面,https://example.com/login
-2026-11-12 09:08:49.584 | INFO     | pages.base_page:fill:19 - 填充输入框:用户名输入框,内容:nonexistent
-2026-11-12 09:09:20.749 | INFO     | pages.base_page:open:11 - 打开页面,https://example.com/login
-2026-11-12 09:09:20.811 | INFO     | pages.base_page:fill:19 - 填充输入框:用户名输入框,内容:nonexistent
