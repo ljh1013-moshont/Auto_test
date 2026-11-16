@@ -1,0 +1,6 @@
+2026-11-16 09:02:56.837 | INFO     | pages.base_page:open:11 - 打开页面,https://example.com/login
+2026-11-16 09:02:56.919 | INFO     | pages.base_page:fill:19 - 填充输入框:用户名输入框,内容:guest
+2026-11-16 09:03:28.187 | INFO     | pages.base_page:open:11 - 打开页面,https://example.com/login
+2026-11-16 09:03:28.270 | INFO     | pages.base_page:fill:19 - 填充输入框:用户名输入框,内容:guest
+2026-11-16 09:03:59.473 | INFO     | pages.base_page:open:11 - 打开页面,https://example.com/login
+2026-11-16 09:03:59.555 | INFO     | pages.base_page:fill:19 - 填充输入框:用户名输入框,内容:guest
