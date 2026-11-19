@@ -1,4 +1,0 @@
-2026-11-19 09:47:33.166 | INFO     | pages.base_page:open:11 - 打开页面,https://example.com/login
-2026-11-19 09:47:33.250 | INFO     | pages.base_page:fill:19 - 填充输入框:用户名输入框,内容:
-2026-11-19 09:48:04.421 | INFO     | pages.base_page:open:11 - 打开页面,https://example.com/login
-2026-11-19 09:48:04.490 | INFO     | pages.base_page:fill:19 - 填充输入框:用户名输入框,内容:
